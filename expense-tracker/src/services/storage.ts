@@ -1,7 +1,8 @@
 import { Preferences } from '@capacitor/preferences';
 
 const SETUP_KEY = 'expense_app_setup';
-const CATEGORY_KEY = 'expense_categories';
+const EXPENSE_KEY = 'expenses';
+
 
 
 export interface SetupData {
@@ -27,14 +28,20 @@ export const clearSetup = async () => {
   await Preferences.remove({ key: SETUP_KEY });
 };
 
-export const saveCategories = async (categories: string[]) => {
+
+export const loadExpenses = async (): Promise<any[]> => {
+  const { value } = await Preferences.get({ key: EXPENSE_KEY });
+  return value ? JSON.parse(value) : [];
+};
+
+export const saveExpense = async (expense: any) => {
+  const expenses = await loadExpenses();
+  const updated = [...expenses, expense];
+
   await Preferences.set({
-    key: CATEGORY_KEY,
-    value: JSON.stringify(categories),
+    key: EXPENSE_KEY,
+    value: JSON.stringify(updated),
   });
 };
 
-export const loadCategories = async (): Promise<string[]> => {
-  const { value } = await Preferences.get({ key: CATEGORY_KEY });
-  return value ? JSON.parse(value) : [];
-};
+
