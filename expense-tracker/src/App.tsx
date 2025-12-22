@@ -7,6 +7,7 @@ import { loadSetup } from './services/storage';
 import Home from './pages/Home';
 import Setup from './pages/Setup';
 
+/*trst*/
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
