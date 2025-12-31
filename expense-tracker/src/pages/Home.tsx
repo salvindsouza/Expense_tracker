@@ -1,3 +1,13 @@
+interface Expense {
+  id: string;
+  category: string;
+  amount: number;
+  type: 'need' | 'want';
+  date: string;
+  month: string;
+  createdAt: string;
+}
+
 import {
   IonPage,
   IonHeader,
@@ -19,7 +29,6 @@ import { useEffect, useState } from 'react';
 import {
   loadExpenses,
   saveExpense,
-  updateExpense,
   deleteExpense,
   saveMonthlyGoals,
   loadMonthlyGoals
@@ -32,20 +41,14 @@ const getMonthKey = (date: string) => date.slice(0, 7);
 const prevMonth = (month: string) => {
   let [y, m] = month.split('-').map(Number);
   m--;
-  if (m === 0) {
-    m = 12;
-    y--;
-  }
+  if (m === 0) { m = 12; y--; }
   return `${y}-${String(m).padStart(2, '0')}`;
 };
 
 const nextMonth = (month: string) => {
   let [y, m] = month.split('-').map(Number);
   m++;
-  if (m === 13) {
-    m = 1;
-    y++;
-  }
+  if (m === 13) { m = 1; y++; }
   return `${y}-${String(m).padStart(2, '0')}`;
 };
 
@@ -64,27 +67,23 @@ const Home: React.FC = () => {
   const [monthlyGoals, setMonthlyGoals] = useState({
     income: 0,
     needs: 0,
-    savings: 0,
+    savings: 0
   });
 
-  const [expenses, setExpenses] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+
 
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState(0);
   const [type, setType] = useState<'need' | 'want'>('need');
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editCategory, setEditCategory] = useState('');
-  const [editAmount, setEditAmount] = useState(0);
-  const [editType, setEditType] = useState<'need' | 'want'>('need');
-  const [editDate, setEditDate] = useState('');
-
   /* ---------- Sync Expense Date ---------- */
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const currentMonth = today.slice(0, 7);
     setExpenseDate(
-      selectedMonth === currentMonth ? today : `${selectedMonth}-01`
+      selectedMonth === today.slice(0, 7)
+        ? today
+        : `${selectedMonth}-01`
     );
   }, [selectedMonth]);
 
@@ -94,14 +93,12 @@ const Home: React.FC = () => {
       const stored = await loadMonthlyGoals(selectedMonth);
       if (stored) {
         setMonthlyGoals(stored);
-        return;
+      } else {
+        const empty = { income: 0, needs: 0, savings: 0 };
+        setMonthlyGoals(empty);
+        await saveMonthlyGoals(selectedMonth, empty);
       }
-
-      const empty = { income: 0, needs: 0, savings: 0 };
-      setMonthlyGoals(empty);
-      await saveMonthlyGoals(selectedMonth, empty);
     };
-
     loadGoals();
   }, [selectedMonth]);
 
@@ -123,7 +120,7 @@ const Home: React.FC = () => {
       type,
       date: expenseDate,
       month: getMonthKey(expenseDate),
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
     };
 
     await saveExpense(expense);
@@ -132,33 +129,6 @@ const Home: React.FC = () => {
     setCategory('');
     setAmount(0);
     setType('need');
-  };
-
-  /* ---------- Edit / Delete ---------- */
-  const saveEdit = async () => {
-    if (!editingId || !editCategory.trim() || editAmount <= 0) return;
-
-    const updated = {
-      id: editingId,
-      category: editCategory.trim(),
-      amount: editAmount,
-      type: editType,
-      date: editDate,
-      month: getMonthKey(editDate),
-      createdAt: new Date().toISOString(),
-    };
-
-    await updateExpense(updated);
-    setEditingId(null);
-
-    loadExpenses().then(all =>
-      setExpenses(all.filter(e => e.month === selectedMonth))
-    );
-  };
-
-  const removeExpense = async (id: string) => {
-    await deleteExpense(id);
-    setExpenses(prev => prev.filter(e => e.id !== id));
   };
 
   /* ---------- Derived Metrics ---------- */
@@ -176,41 +146,24 @@ const Home: React.FC = () => {
 
   const actualSavings = income - sumNeeds - sumWants;
 
+  /* ---------- Budget States ---------- */
 
-const remainingNeeds = goalNeeds - sumNeeds;
-const remainingWants = goalWants - sumWants;
-
-const needsExceeded = remainingNeeds < 0 ? Math.abs(remainingNeeds) : 0;
-const wantsExceeded = remainingWants < 0 ? Math.abs(remainingWants) : 0;
-
-
-const remainingNeedsRatio =
-  goalNeeds > 0
-    ? Math.max(Math.min(remainingNeeds / goalNeeds, 1), 0)
-    : 0;
-
-const wantsRemainingRatio =
-  goalWants > 0
-    ? Math.max(Math.min(remainingWants / goalWants, 1), 0)
-    : 0;
-
-const savingsProgress =
-  goalSavings > 0 ? Math.min(actualSavings / goalSavings, 1) : 0;
-
+  const remainingNeeds = goalNeeds - sumNeeds;
+  const remainingWants = goalWants - sumWants;
   const savingsRemaining = goalSavings - actualSavings;
-const savingsShortfall = savingsRemaining > 0 ? savingsRemaining : 0;
-const savingsSurplus = actualSavings > goalSavings
-  ? actualSavings - goalSavings
-  : 0;
 
-  const goalValidationMessage = (() => {
-    if (income <= 0) return 'Income must be greater than 0';
-    if (goalNeeds < 0 || goalSavings < 0) return 'Values cannot be negative';
-    if (goalNeeds + goalSavings > income)
-      return 'Needs + Savings cannot exceed Income';
-    return '';
-  })();
+  const needsRatio = goalNeeds > 0 ? Math.min(sumNeeds / goalNeeds, 1) : 0;
+  const wantsRatio = goalWants > 0 ? Math.min(sumWants / goalWants, 1) : 0;
+  const savingsRatio = goalSavings > 0 ? Math.min(actualSavings / goalSavings, 1) : 0;
 
+  const goalValidationMessage =
+    income <= 0
+      ? 'Income must be greater than 0'
+      : goalNeeds < 0 || goalSavings < 0
+      ? 'Values cannot be negative'
+      : goalNeeds + goalSavings > income
+      ? 'Needs + Savings cannot exceed Income'
+      : '';
 
   /* ---------- UI ---------- */
 
@@ -227,9 +180,7 @@ const savingsSurplus = actualSavings > goalSavings
         {/* Month Navigation */}
         <IonItem lines="none">
           <IonButton size="small" onClick={() => setSelectedMonth(prevMonth(selectedMonth))}>◀</IonButton>
-          <IonLabel style={{ textAlign: 'center', flex: 1 }}>
-            <strong>{selectedMonth}</strong>
-          </IonLabel>
+          <IonLabel className="month-label">{selectedMonth}</IonLabel>
           <IonButton size="small" onClick={() => setSelectedMonth(nextMonth(selectedMonth))}>▶</IonButton>
         </IonItem>
 
@@ -260,149 +211,88 @@ const savingsSurplus = actualSavings > goalSavings
         </IonButton>
 
         {goalValidationMessage && (
-          <IonItem lines="none">
-            <IonLabel color="danger">{goalValidationMessage}</IonLabel>
-          </IonItem>
+          <IonLabel className="budget-danger validation-text">
+            {goalValidationMessage}
+          </IonLabel>
         )}
 
-        {/* Budget Progress */}
-    
+        {/* Budget Summary */}
+        <h2>Budget Summary</h2>
+
+        {/* Needs */}
         <h3>Needs</h3>
+        <IonLabel className={remainingNeeds >= 0 ? 'budget-ok' : 'budget-danger'}>
+          {remainingNeeds >= 0
+            ? <>Left to spend <span className="amount-strong">{remainingNeeds}</span></>
+            : <>Exceeded by <span className="amount-strong">{Math.abs(remainingNeeds)}</span></>}
+        </IonLabel>
+        <IonProgressBar value={needsRatio} />
 
-        {remainingNeeds >= 0 ? (
-          <>
-            <IonLabel>
-              Left to spend: <strong>{remainingNeeds}</strong>
-            </IonLabel>
-            <IonProgressBar value={remainingNeedsRatio} />
-          </>
-        ) : (
-          <>
-            <IonLabel color="danger">
-              Exceeded by <strong>{needsExceeded}</strong>
-            </IonLabel>
-            <IonProgressBar value={1} color="danger" />
-          </>
-        )}
-
+        {/* Wants */}
         <h3>Wants</h3>
+        <IonLabel className={remainingWants >= 0 ? 'budget-ok' : 'budget-danger'}>
+          {remainingWants >= 0
+            ? <>Left to spend <span className="amount-strong">{remainingWants}</span></>
+            : <>Exceeded by <span className="amount-strong">{Math.abs(remainingWants)}</span></>}
+        </IonLabel>
+        <IonProgressBar value={wantsRatio} />
 
-{remainingWants >= 0 ? (
-  <>
-    <IonLabel>
-      Left to spend: <strong>{remainingWants}</strong>
-    </IonLabel>
-    <IonProgressBar value={wantsRemainingRatio} color="secondary" />
-  </>
-) : (
-  <>
-    <IonLabel color="danger">
-      Exceeded by <strong>{wantsExceeded}</strong>
-    </IonLabel>
-    <IonProgressBar value={1} color="danger" />
-  </>
-)}
+        {/* Savings */}
+        <h3>Savings</h3>
+        <IonLabel className={actualSavings >= goalSavings ? 'budget-ok' : 'budget-warn'}>
+          {actualSavings >= goalSavings
+            ? <>Goal achieved 🎉</>
+            : <>Still need to save <span className="amount-strong">{savingsRemaining}</span></>}
+        </IonLabel>
+        <IonProgressBar value={savingsRatio} />
 
-<h3>Savings</h3>
+        {/* Add Expense */}
+        <h2>Add Expense</h2>
 
-{actualSavings < goalSavings ? (
-  <>
-    <IonLabel color="warning">
-      Still need to save <strong>{savingsShortfall}</strong>
-    </IonLabel>
-    <IonProgressBar value={savingsProgress} color="warning" />
-  </> ) : (
-  <>
-    <IonLabel color="success">
-      Goal achieved 🎉
-      {savingsSurplus > 0 && ( <> — Extra saved: <strong>{savingsSurplus}</strong></>
-      )}
-    </IonLabel>
-    <IonProgressBar value={1} color="success" />
-  </>
-)}
+        <IonItem>
+          <IonLabel position="stacked">Date</IonLabel>
+          <IonInput type="date" value={expenseDate}
+            onIonChange={e => setExpenseDate(e.detail.value!)} />
+        </IonItem>
 
-        {/* -------- Add Expense -------- */}
-<h2>Add Expense</h2>
+        <IonItem>
+          <IonLabel position="stacked">Category</IonLabel>
+          <IonInput value={category}
+            onIonChange={e => setCategory(e.detail.value!)} />
+        </IonItem>
 
-<IonItem>
-  <IonLabel position="stacked">Date</IonLabel>
-  <IonInput
-    type="date"
-    value={expenseDate}
-    onIonChange={e => setExpenseDate(e.detail.value!)}
-  />
-</IonItem>
+        <IonItem>
+          <IonLabel position="stacked">Amount</IonLabel>
+          <IonInput type="number" value={amount}
+            onIonChange={e => setAmount(Number(e.detail.value) || 0)} />
+        </IonItem>
 
-<IonItem>
-  <IonLabel position="stacked">Category</IonLabel>
-  <IonInput
-    value={category}
-    placeholder="e.g. Rent, Food"
-    onIonChange={e => setCategory(e.detail.value!)}
-  />
-</IonItem>
+        <IonRadioGroup value={type} onIonChange={e => setType(e.detail.value)}>
+          <IonItem><IonLabel>Need</IonLabel><IonRadio value="need" /></IonItem>
+          <IonItem><IonLabel>Want</IonLabel><IonRadio value="want" /></IonItem>
+        </IonRadioGroup>
 
-<IonItem>
-  <IonLabel position="stacked">Amount</IonLabel>
-  <IonInput
-    type="number"
-    value={amount}
-    onIonChange={e => setAmount(Number(e.detail.value) || 0)}
-  />
-</IonItem>
+        <IonButton expand="block" onClick={addExpense}>Add Expense</IonButton>
 
-<IonRadioGroup value={type} onIonChange={e => setType(e.detail.value)}>
-  <IonItem>
-    <IonLabel>Need</IonLabel>
-    <IonRadio value="need" />
-  </IonItem>
-  <IonItem>
-    <IonLabel>Want</IonLabel>
-    <IonRadio value="want" />
-  </IonItem>
-</IonRadioGroup>
-
-<IonButton expand="block" onClick={addExpense}>
-  Add Expense
-</IonButton>
-
-{/* -------- Expense List -------- */}
-<h2>Expenses</h2>
-
-<IonList>
-  {expenses.map(exp => (
-    <IonItem key={exp.id}>
-      <IonLabel>
-        <strong>{exp.category}</strong><br />
-        {exp.amount} – {exp.type}<br />
-        <small>{exp.date}</small>
-      </IonLabel>
-
-      <IonButton
-        size="small"
-        onClick={() => {
-          setEditingId(exp.id);
-          setEditCategory(exp.category);
-          setEditAmount(exp.amount);
-          setEditType(exp.type);
-          setEditDate(exp.date);
-        }}
-      >
-        Edit
-      </IonButton>
-
-      <IonButton
-        size="small"
-        color="danger"
-        onClick={() => removeExpense(exp.id)}
-      >
-        Delete
-      </IonButton>
-    </IonItem>
-  ))}
-</IonList>
-
+        {/* Expenses */}
+        <h2>Expenses</h2>
+        <IonList>
+          {expenses.map(exp => (
+            <IonItem key={exp.id}>
+              <IonLabel>
+                <strong>{exp.category}</strong><br />
+                {exp.amount} – {exp.type}<br />
+                <span className="expense-meta">{exp.date}</span>
+              </IonLabel>
+              <IonButton color="danger" size="small"
+                onClick={() => deleteExpense(exp.id).then(() =>
+                  setExpenses(prev => prev.filter(e => e.id !== exp.id))
+                )}>
+                Delete
+              </IonButton>
+            </IonItem>
+          ))}
+        </IonList>
 
         {/* Reset */}
         <IonButton color="danger" expand="block"
@@ -419,4 +309,3 @@ const savingsSurplus = actualSavings > goalSavings
 };
 
 export default Home;
-

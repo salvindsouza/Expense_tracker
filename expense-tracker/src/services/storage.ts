@@ -1,52 +1,28 @@
 import { Preferences } from '@capacitor/preferences';
 
+/* ---------- KEYS ---------- */
+
 const SETUP_KEY = 'expense_app_setup';
 const EXPENSE_KEY = 'expenses';
-
 const GOALS_KEY_PREFIX = 'monthly_goals_';
 
-export const saveMonthlyGoals = async (month: string, goals: any) => {
-  await Preferences.set({
-    key: `${GOALS_KEY_PREFIX}${month}`,
-    value: JSON.stringify(goals),
-  });
-};
+/* ---------- TYPES ---------- */
 
-export const loadMonthlyGoals = async (month: string) => {
-  const { value } = await Preferences.get({
-    key: `${GOALS_KEY_PREFIX}${month}`,
-  });
-  return value ? JSON.parse(value) : null;
-};
+export interface MonthlyGoals {
+  income: number;
+  needs: number;
+  savings: number;
+}
 
-
-export const updateExpense = async (updatedExpense: any) => {
-  const { value } = await Preferences.get({ key: EXPENSE_KEY });
-  const expenses = value ? JSON.parse(value) : [];
-
-  const updated = expenses.map((e: any) =>
-    e.id === updatedExpense.id ? updatedExpense : e
-  );
-
-  await Preferences.set({
-    key: EXPENSE_KEY,
-    value: JSON.stringify(updated),
-  });
-};
-
-export const deleteExpense = async (id: string) => {
-  const { value } = await Preferences.get({ key: EXPENSE_KEY });
-  const expenses = value ? JSON.parse(value) : [];
-
-  const filtered = expenses.filter((e: any) => e.id !== id);
-
-  await Preferences.set({
-    key: EXPENSE_KEY,
-    value: JSON.stringify(filtered),
-  });
-};
-
-
+export interface Expense {
+  id: string;
+  category: string;
+  amount: number;
+  type: 'need' | 'want';
+  date: string;
+  month: string;
+  createdAt: string;
+}
 
 export interface SetupData {
   currency: string;
@@ -55,29 +31,35 @@ export interface SetupData {
   savingsAmt: number;
 }
 
-export const saveSetup = async (data: SetupData) => {
+/* ---------- MONTHLY GOALS ---------- */
+
+export const saveMonthlyGoals = async (
+  month: string,
+  goals: MonthlyGoals
+): Promise<void> => {
   await Preferences.set({
-    key: SETUP_KEY,
-    value: JSON.stringify(data),
+    key: `${GOALS_KEY_PREFIX}${month}`,
+    value: JSON.stringify(goals),
   });
 };
 
-export const loadSetup = async (): Promise<SetupData | null> => {
-  const { value } = await Preferences.get({ key: SETUP_KEY });
-  return value ? JSON.parse(value) : null;
+export const loadMonthlyGoals = async (
+  month: string
+): Promise<MonthlyGoals | null> => {
+  const { value } = await Preferences.get({
+    key: `${GOALS_KEY_PREFIX}${month}`,
+  });
+  return value ? (JSON.parse(value) as MonthlyGoals) : null;
 };
 
-export const clearSetup = async () => {
-  await Preferences.remove({ key: SETUP_KEY });
-};
+/* ---------- EXPENSES ---------- */
 
-
-export const loadExpenses = async (): Promise<any[]> => {
+export const loadExpenses = async (): Promise<Expense[]> => {
   const { value } = await Preferences.get({ key: EXPENSE_KEY });
-  return value ? JSON.parse(value) : [];
+  return value ? (JSON.parse(value) as Expense[]) : [];
 };
 
-export const saveExpense = async (expense: any) => {
+export const saveExpense = async (expense: Expense): Promise<void> => {
   const expenses = await loadExpenses();
   const updated = [...expenses, expense];
 
@@ -87,4 +69,45 @@ export const saveExpense = async (expense: any) => {
   });
 };
 
+export const updateExpense = async (
+  updatedExpense: Expense
+): Promise<void> => {
+  const expenses = await loadExpenses();
 
+  const updated = expenses.map(e =>
+    e.id === updatedExpense.id ? updatedExpense : e
+  );
+
+  await Preferences.set({
+    key: EXPENSE_KEY,
+    value: JSON.stringify(updated),
+  });
+};
+
+export const deleteExpense = async (id: string): Promise<void> => {
+  const expenses = await loadExpenses();
+  const filtered = expenses.filter(e => e.id !== id);
+
+  await Preferences.set({
+    key: EXPENSE_KEY,
+    value: JSON.stringify(filtered),
+  });
+};
+
+/* ---------- SETUP ---------- */
+
+export const saveSetup = async (data: SetupData): Promise<void> => {
+  await Preferences.set({
+    key: SETUP_KEY,
+    value: JSON.stringify(data),
+  });
+};
+
+export const loadSetup = async (): Promise<SetupData | null> => {
+  const { value } = await Preferences.get({ key: SETUP_KEY });
+  return value ? (JSON.parse(value) as SetupData) : null;
+};
+
+export const clearSetup = async (): Promise<void> => {
+  await Preferences.remove({ key: SETUP_KEY });
+};
