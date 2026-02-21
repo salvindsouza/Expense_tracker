@@ -33,8 +33,6 @@ import {
   saveMonthlyGoals,
   loadMonthlyGoals
 } from '../services/storage';
-import { Preferences } from '@capacitor/preferences';
-
 /* ---------- Helpers ---------- */
 const getMonthKey = (date: string) => date.slice(0, 7);
 
@@ -293,15 +291,6 @@ const Home: React.FC = () => {
             </IonItem>
           ))}
         </IonList>
-
-        {/* Reset */}
-        <IonButton color="danger" expand="block"
-          onClick={async () => {
-            await Preferences.clear();
-            window.location.reload();
-          }}>
-          Reset App
-        </IonButton>
 
       </IonContent>
     </IonPage>
