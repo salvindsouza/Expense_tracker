@@ -1,4 +1,5 @@
 import {
+  IonBackButton,
   IonButton,
   IonButtons,
   IonContent,
@@ -10,20 +11,28 @@ import {
   IonPage,
   IonProgressBar,
   IonTitle,
-  IonToast,
   IonToolbar,
 } from '@ionic/react';
 import { useEffect, useState } from 'react';
 
-import './Home.css';
+import './HomeApple.css';
 import {
   deleteExpense,
   loadExpenses,
   loadMonthlyGoals,
   saveExpense,
   saveMonthlyGoals,
-  type Expense,
 } from '../services/storage';
+
+interface Expense {
+  id: string;
+  category: string;
+  amount: number;
+  type: 'need' | 'want';
+  date: string;
+  month: string;
+  createdAt: string;
+}
 
 const getMonthKey = (date: string) => date.slice(0, 7);
 
@@ -88,25 +97,7 @@ const formatShortDate = (value: string) => {
   return Number.isNaN(parsed.getTime()) ? value : shortDateFormatter.format(parsed);
 };
 
-const csvEscape = (value: string | number) => {
-  const safeValue = String(value);
-  if (/[",\n]/.test(safeValue)) {
-    return `"${safeValue.replace(/"/g, '""')}"`;
-  }
-
-  return safeValue;
-};
-
-const getFilenameDate = () => {
-  const now = new Date();
-  return [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, '0'),
-    String(now.getDate()).padStart(2, '0'),
-  ].join('-');
-};
-
-const Home: React.FC = () => {
+const HomeApple: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     formatLocalMonth(new Date())
   );
@@ -122,8 +113,6 @@ const Home: React.FC = () => {
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState(0);
   const [type, setType] = useState<'need' | 'want'>('need');
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [isExporting, setIsExporting] = useState(false);
 
   const updateMonthlyGoal = (
     field: 'income' | 'needs' | 'savings',
@@ -172,7 +161,7 @@ const Home: React.FC = () => {
       return;
     }
 
-    const expense: Expense = {
+    const expense = {
       id: Date.now().toString(),
       category: category.trim(),
       amount,
@@ -192,83 +181,6 @@ const Home: React.FC = () => {
     setCategory('');
     setAmount(0);
     setType('need');
-    setFeedbackMessage('Expense added.');
-  };
-
-  const handleSaveGoals = async () => {
-    const normalizedGoals = {
-      income: Number(monthlyGoals.income) || 0,
-      needs: Number(monthlyGoals.needs) || 0,
-      savings: Number(monthlyGoals.savings) || 0,
-    };
-    setMonthlyGoals(normalizedGoals);
-    await saveMonthlyGoals(selectedMonth, normalizedGoals);
-    setFeedbackMessage(`Goals saved for ${formatMonthLabel(selectedMonth)}.`);
-  };
-
-  const handleDeleteExpense = async (id: string) => {
-    await deleteExpense(id);
-    setExpenses((previous) => previous.filter((expense) => expense.id !== id));
-    setFeedbackMessage('Expense deleted.');
-  };
-
-  const handleExportCsv = async () => {
-    setIsExporting(true);
-
-    try {
-      const allExpenses = (await loadExpenses()).sort(
-        (a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt)
-      );
-
-      if (allExpenses.length === 0) {
-        setFeedbackMessage('No expenses available to export yet.');
-        return;
-      }
-
-      const rows = [
-        ['date', 'month', 'category', 'type', 'amount', 'created_at'],
-        ...allExpenses.map((expense) => [
-          expense.date,
-          expense.month,
-          expense.category,
-          expense.type,
-          expense.amount,
-          expense.createdAt,
-        ]),
-      ];
-
-      const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\n');
-      const filename = `expenses-${getFilenameDate()}.csv`;
-      const file = new File([csv], filename, { type: 'text/csv;charset=utf-8' });
-      const shareNavigator = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-      };
-
-      if (shareNavigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          title: 'Expense CSV',
-          text: 'Save or send your expense export.',
-          files: [file],
-        });
-        setFeedbackMessage('CSV opened in the share sheet. Save it to Files, Drive, or Sheets.');
-        return;
-      }
-
-      const url = URL.createObjectURL(file);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      setFeedbackMessage('CSV downloaded. Open it in Google Sheets when ready.');
-    } catch (error) {
-      console.error(error);
-      setFeedbackMessage('Unable to export CSV right now.');
-    } finally {
-      setIsExporting(false);
-    }
   };
 
   const income = monthlyGoals.income;
@@ -345,9 +257,12 @@ const Home: React.FC = () => {
     <IonPage>
       <IonHeader translucent className="apple-header">
         <IonToolbar className="apple-toolbar">
-          <IonTitle>Expense Tracker</IonTitle>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/home" />
+          </IonButtons>
+          <IonTitle>Preview Home</IonTitle>
           <IonButtons slot="end">
-            <IonButton fill="clear" routerLink="/habits" className="apple-header-link">
+            <IonButton fill="clear" routerLink="/habits-apple" className="apple-header-link">
               Habits
             </IonButton>
           </IonButtons>
@@ -462,7 +377,7 @@ const Home: React.FC = () => {
                 <p className="apple-section-label">Add Expense</p>
                 <h2>Log a new entry</h2>
                 <p className="apple-section-copy">
-                  Date, category, amount, type. Then save and move on.
+                  The flow stays the same: date, category, amount, type, then save.
                 </p>
               </div>
 
@@ -569,7 +484,7 @@ const Home: React.FC = () => {
                 expand="block"
                 className="apple-primary-button"
                 disabled={!!goalValidationMessage}
-                onClick={handleSaveGoals}
+                onClick={() => saveMonthlyGoals(selectedMonth, monthlyGoals)}
               >
                 Save Goals
               </IonButton>
@@ -586,7 +501,7 @@ const Home: React.FC = () => {
                 <p className="apple-section-label">Expenses</p>
                 <h2>This month&apos;s list</h2>
                 <p className="apple-section-copy">
-                  Keep history at the end, with export ready below the list.
+                  The same delete action, presented with a cleaner, denser layout.
                 </p>
               </div>
 
@@ -617,7 +532,11 @@ const Home: React.FC = () => {
                         fill="clear"
                         size="small"
                         className="apple-delete-button"
-                        onClick={() => handleDeleteExpense(expense.id)}
+                        onClick={() =>
+                          deleteExpense(expense.id).then(() =>
+                            setExpenses((previous) => previous.filter((entry) => entry.id !== expense.id))
+                          )
+                        }
                       >
                         Delete
                       </IonButton>
@@ -631,8 +550,8 @@ const Home: React.FC = () => {
                   <p className="apple-section-label">CSV Export</p>
                   <h3>Export expenses for Google Sheets</h3>
                   <p>
-                    Generates a clean CSV using date, month, category, type, amount, and
-                    created_at so you can open it directly in Google Sheets.
+                    Mockup idea: generate a clean CSV with columns like date, month, category,
+                    type, amount, and created_at, then save it to a phone-accessible folder.
                   </p>
                   <div className="apple-export-columns">
                     <span>date</span>
@@ -644,29 +563,18 @@ const Home: React.FC = () => {
                   </div>
                 </div>
                 <div className="apple-export-actions">
-                  <IonButton
-                    className="apple-primary-button apple-export-button"
-                    onClick={handleExportCsv}
-                    disabled={isExporting}
-                  >
-                    {isExporting ? 'Preparing CSV...' : 'Export CSV'}
+                  <IonButton className="apple-primary-button apple-export-button">
+                    Export CSV
                   </IonButton>
-                  <span>Use the download or share flow to save it locally.</span>
+                  <span>Suggested location: Documents/Expense Tracker</span>
                 </div>
               </div>
             </article>
           </section>
         </div>
       </IonContent>
-
-      <IonToast
-        isOpen={!!feedbackMessage}
-        message={feedbackMessage}
-        duration={2200}
-        onDidDismiss={() => setFeedbackMessage('')}
-      />
     </IonPage>
   );
 };
 
-export default Home;
+export default HomeApple;

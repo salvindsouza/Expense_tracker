@@ -3,6 +3,9 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 
 import Home from './pages/Home';
+import Habits from './pages/Habits';
+import HabitsApple from './pages/HabitsApple';
+import HomeApple from './pages/HomeApple';
 
 /* Core CSS required for Ionic components */
 import '@ionic/react/css/core.css';
@@ -34,6 +37,18 @@ const App: React.FC = () => {
 
           <Route exact path="/home">
             <Home />
+          </Route>
+
+          <Route exact path="/habits">
+            <Habits />
+          </Route>
+
+          <Route exact path="/home-apple">
+            <HomeApple />
+          </Route>
+
+          <Route exact path="/habits-apple">
+            <HabitsApple />
           </Route>
 
           <Route exact path="/">

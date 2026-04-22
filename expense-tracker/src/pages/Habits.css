@@ -1,0 +1,172 @@
+.habit-hero {
+  max-width: 560px;
+  margin-bottom: 12px;
+}
+
+.habit-hero h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  color: #111111;
+}
+
+.habit-copy {
+  margin: 8px 0 0;
+  color: #5f5f64;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.habit-top-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 18px 20px;
+}
+
+.habit-top-card h2 {
+  margin: 0;
+  font-size: clamp(1.18rem, 2vw, 1.55rem);
+  letter-spacing: -0.03em;
+}
+
+.habit-top-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.habit-input-item {
+  width: min(360px, 100%);
+}
+
+.habit-add-button {
+  margin-top: 0;
+}
+
+.habit-list {
+  margin-top: 18px;
+}
+
+.habit-row {
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(29, 29, 31, 0.08);
+}
+
+.habit-row:first-child {
+  padding-top: 4px;
+}
+
+.habit-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.habit-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.habit-main h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.habit-main p {
+  margin: 4px 0 0;
+  color: #6e6e73;
+  font-size: 0.84rem;
+}
+
+.habit-done-button,
+.habit-pending-button {
+  --border-radius: 999px;
+  text-transform: none;
+  font-weight: 600;
+  min-height: 38px;
+}
+
+.habit-done-button {
+  --background: #1d1d1f;
+  --color: #f5f5f7;
+}
+
+.habit-pending-button {
+  --border-color: rgba(29, 29, 31, 0.12);
+  --color: #1d1d1f;
+}
+
+.habit-history {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.habit-day {
+  text-align: center;
+}
+
+.habit-day span {
+  display: block;
+  margin-bottom: 8px;
+  color: #6e6e73;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.habit-day i {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 29, 31, 0.08);
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.habit-day i.is-done {
+  background: linear-gradient(135deg, #34c759, #30d158);
+  border-color: transparent;
+}
+
+.habit-row-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.habit-row-footer span {
+  color: #6e6e73;
+  font-size: 0.8rem;
+}
+
+.habit-row-footer button {
+  border: 0;
+  background: transparent;
+  color: #c51f1a;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .habit-top-card,
+  .habit-top-actions,
+  .habit-main,
+  .habit-row-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .habit-input-item,
+  .habit-add-button {
+    width: 100%;
+  }
+}
